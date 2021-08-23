@@ -15,35 +15,21 @@ const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", socket => { 
-    socket.on("enter_room", (message, done) => {
-        console.log(message);
-        setTimeout(() => {
-            done()}, 10000);
-        }); 
- });
-
-
-/* 
-const sockets = [];
-wss.on("connection", (socket) => {
-    sockets.push(socket);
-    socket["nickname"] = "anonymous"
-    console.log("Connected to Browser✅");
-    socket.on("close", () =>{
-        console.log("Discconected from the Browser❌");
+    socket.onAny((event) => {console.log(`Socket Event:${event}`);});
+    socket.on("enter_room", (roomName, done) => {
+        socket.join(roomName);
+        done();
+        socket.to(roomName).emit("welcome");
     });
-    socket.on("message", (message) =>{
-        const parsedMessage = JSON.parse(message)
-        switch (parsedMessage.type) {
-            case "new_message" :
-                sockets.forEach(aSocket => aSocket.send(`${socket.nickname}: ${parsedMessage.payload}`));
-                break
-            case "nickname" :
-                socket["nickname"] = parsedMessage.payload;
-                break
-        }
+    socket.on("disconnecting", () => {
+        socket.rooms.forEach(room => socket.to(room).emit("bye"));
     });
-}); */
+    socket.on("new_message", (message, roomName, done) => {
+        socket.to(roomName).emit("new_message", message);
+        done();
+    });
+});
+
 
 const handleListen = () => console.log("Listening on http://localhost:3000");
 httpServer.listen(3000, handleListen);
