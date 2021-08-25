@@ -32,15 +32,20 @@ wsServer.on("connection", socket => {
         socket.join(roomName);
         done();
         socket.to(roomName).emit("welcome", socket.nickname);
+        wsServer.sockets.emit("room_change", getPublicRooms());
     });
     socket.on("disconnecting", () => {
         socket.rooms.forEach(room => socket.to(room).emit("bye", socket.nickname));
     });
+    socket.on("disconnect", () =>{
+        wsServer.sockets.emit("room_change", getPublicRooms());
+    })
     socket.on("new_message", (message, roomName, done) => {
         socket.to(roomName).emit("new_message", `${socket.nickname}: ${message}`);
         done();
     });
     socket.on("create_nickname", nickname => socket["nickname"] = nickname);
+    wsServer.sockets.emit("room_change", getPublicRooms());
 });
 
 
