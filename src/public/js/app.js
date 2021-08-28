@@ -29,11 +29,17 @@ function handleMessageSubmit(event) {
 }
 
 
-function showRoom() {
+function showUserCount(newCount){
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room : ${roomName} (${newCount})`
+}
+
+
+function showRoom(newCount) {
     welcome.hidden = true;
     room.hidden = false;
     const h3 = room.querySelector("h3");
-    h3.innerText = `Room : ${roomName}`
+    h3.innerText = `Room : ${roomName}  (${newCount})`
     const messageForm = room.querySelector("#message");
     messageForm.addEventListener("submit", handleMessageSubmit);
 }
@@ -55,14 +61,17 @@ function handleNicknameSubmit(event) {
     socket.emit("create_nickname", value);
 }
 
+
 nicknameForm.addEventListener("submit", handleNicknameSubmit);
 welcomeForm.addEventListener("submit", handleRoomSubmit);
 
-socket.on('welcome', (user) => {
+socket.on('welcome', (user, newCount) => {
+    showUserCount(newCount)
     addMessage(`${user} joined!`);
 });
 
-socket.on("bye", (user) =>{
+socket.on("bye", (user, newCount) =>{
+    showUserCount(newCount)
     addMessage(`${user} left ㅠㅠ`);
 });
 
