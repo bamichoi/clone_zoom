@@ -1,5 +1,81 @@
 const socket = io();
 
+const myFace = document.getElementById("myFace");
+const muteBtn = document.getElementById("mute");
+const cameraBtn = document.getElementById("camera");
+const cameraSelect = document.getElementById("cameras")
+
+let myStream;
+let muted = false;
+let cameraOff = false;  
+
+async function getCameras(){
+    try{ 
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        cameras = devices.filter(device => device.kind === "videoinput");
+        cameras.forEach(camera => {
+            const option = document.createElement("option");
+            option.value = camera.deviceId;
+            option.innerText = camera.label;
+            cameraSelect.appendChild(option);    
+        })
+    } catch(e) {
+        console.log(e);
+    }
+}
+
+async function getMedia() {
+    try {
+        myStream = await navigator.mediaDevices.getUserMedia({
+            audio:true,
+            video:true
+        });
+        myFace.srcObject = myStream;
+        await getCameras();
+    } catch(e){
+        console.log(e);
+    }
+}
+
+getMedia();
+
+function handleMuteBtnClick(){
+    myStream.getAudioTracks().forEach((track) => (track.enabled = !track.enabled));
+    if(!muted){
+        muted = true;
+        muteBtn.innerText = "Unmute";
+    }
+    else {
+        muted = false;
+        muteBtn.innerText = "Mute";
+    }
+}
+
+function handleCameraBtnClick(){
+    myStream.getVideoTracks().forEach((track) => (track.enabled = !track.enabled));
+    if(!cameraOff){
+        cameraOff = true;
+        cameraBtn.innerText = "Turn camera on";
+    }
+    else {
+        cameraOff = false;
+        cameraBtn.innerText = "Turn camera off";
+    }
+
+}
+
+muteBtn.addEventListener("click", handleMuteBtnClick);
+cameraBtn.addEventListener("click", handleCameraBtnClick);
+
+
+
+
+
+
+
+
+// Chat part
+
 const welcome = document.getElementById("welcome");
 const nickname = document.getElementById("nickname");
 const welcomeForm  = welcome.querySelector("form");
