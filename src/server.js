@@ -60,6 +60,9 @@ wsServer.on("connection", socket => {
     });
     socket.on("create_nickname", nickname => socket["nickname"] = nickname);
     wsServer.sockets.emit("room_change", getPublicRooms());
+    socket.on("offer", (offer, roomName) => {
+        socket.to(roomName).emit("offer", offer);
+    })
 });
 
 

@@ -8,6 +8,7 @@ const cameraSelect = document.getElementById("cameras")
 let myStream;
 let muted = false;
 let cameraOff = false;  
+let myPeerConnection;
 
 async function getCameras(){
     try{ 
@@ -50,7 +51,7 @@ async function getMedia(deviceId) {
     }
 }
 
-getMedia();
+
 
 function handleMuteBtnClick(){
     myStream.getAudioTracks().forEach((track) => (track.enabled = !track.enabled));
@@ -86,10 +87,17 @@ cameraBtn.addEventListener("click", handleCameraBtnClick);
 cameraSelect.addEventListener("input", handleCameraChange);
 
 
+// RTC code
+
+function makeConnection(){
+    myPeerConnection = new RTCPeerConnection();
+    myStream.getTracks().forEach(track => myPeerConnection.addTrack(track, myStream));
 
 
+}
 
-// Chat part
+
+// Nickname, Enter Room and Chat part
 
 const welcome = document.getElementById("welcome");
 const nickname = document.getElementById("nickname");
@@ -126,13 +134,15 @@ function showUserCount(newCount){
 }
 
 
-function showRoom(newCount) {
+async function showRoom(newCount) {
     welcome.hidden = true;
     room.hidden = false;
     const h3 = room.querySelector("h3");
     h3.innerText = `Room : ${roomName}  (${newCount})`
     const messageForm = room.querySelector("#message");
     messageForm.addEventListener("submit", handleMessageSubmit);
+    await getMedia();
+    makeConnection();
 }
 
 function handleRoomSubmit(event) {
@@ -156,9 +166,18 @@ function handleNicknameSubmit(event) {
 nicknameForm.addEventListener("submit", handleNicknameSubmit);
 welcomeForm.addEventListener("submit", handleRoomSubmit);
 
-socket.on('welcome', (user, newCount) => {
+socket.on('welcome', async (user, newCount) => {
     showUserCount(newCount)
     addMessage(`${user} joined!`);
+    const offer = await myPeerConnection.createOffer();
+    myPeerConnection.setLocalDescription(offer)
+    console.log("send the offer")
+    socket.emit("offer", offer, roomName);
+
+});
+
+socket.on("offer", offer => {
+    console.log(offer);
 });
 
 socket.on("bye", (user, newCount) =>{
@@ -177,3 +196,4 @@ socket.on("room_change", (rooms) => {
         roomList.append(li);
     })
 });
+
