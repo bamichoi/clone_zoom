@@ -134,19 +134,21 @@ function showUserCount(newCount){
 }
 
 
-async function showRoom(newCount) {
+function showRoom(newCount) {
     welcome.hidden = true;
     room.hidden = false;
     const h3 = room.querySelector("h3");
-    h3.innerText = `Room : ${roomName}  (${newCount})`
+    h3.innerText = `Room : ${roomName}  (${newCount})`;
     const messageForm = room.querySelector("#message");
     messageForm.addEventListener("submit", handleMessageSubmit);
-    await getMedia();
-    makeConnection();
+    
+    
 }
 
-function handleRoomSubmit(event) {
+async function handleRoomSubmit(event) {
     event.preventDefault();
+    await getMedia();
+    makeConnection();
     const input = welcomeForm.querySelector("input");
     socket.emit("enter_room", input.value, showRoom);
     roomName = input.value;
@@ -167,18 +169,25 @@ nicknameForm.addEventListener("submit", handleNicknameSubmit);
 welcomeForm.addEventListener("submit", handleRoomSubmit);
 
 socket.on('welcome', async (user, newCount) => {
-    showUserCount(newCount)
+    showUserCount(newCount);
     addMessage(`${user} joined!`);
     const offer = await myPeerConnection.createOffer();
-    myPeerConnection.setLocalDescription(offer)
-    console.log("send the offer")
+    myPeerConnection.setLocalDescription(offer);
+    console.log("send the offer");
     socket.emit("offer", offer, roomName);
 
 });
 
-socket.on("offer", offer => {
-    console.log(offer);
+socket.on("offer", async(offer) => {
+    myPeerConnection.setRemoteDescription(offer);
+    const answer = await myPeerConnection.createAnswer();
+    myPeerConnection.setLocalDescription(answer);
+    socket.emit("answer", answer, roomName);
 });
+
+socket.on("answer", (answer) => {
+    myPeerConnection.setRemoteDescription(answer);
+})
 
 socket.on("bye", (user, newCount) =>{
     showUserCount(newCount)
